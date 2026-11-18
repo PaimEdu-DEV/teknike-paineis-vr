@@ -17,7 +17,7 @@
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--floresta); font-family: Archivo, Arial, sans-serif; color: var(--branco); }
   #app canvas { display: block; }
   #tablet { position: fixed; left: 12px; top: 12px; width: min(46vw, 760px); height: auto; border: 1px solid #24513a; z-index: 5; touch-action: none; }
-  body.in-vr #tablet, body.in-vr #tip { display: none; }
+  body.in-vr #tablet, body.in-vr #tip, body.hide-tablet #tablet { display: none; }
   #tip { position: fixed; display: none; pointer-events: none; background: rgba(11,42,29,.94); color: #fff; font: 600 14px Archivo, Arial; padding: 6px 10px; z-index: 9; max-width: 420px; }
   #ring { position: fixed; display: none; width: 34px; height: 34px; margin: -30px 0 0 -40px; border-radius: 50%; pointer-events: none; z-index: 9;
     background: conic-gradient(var(--verde) calc(var(--p) * 1%), rgba(255,255,255,.25) 0); -webkit-mask: radial-gradient(circle, transparent 55%, #000 57%); mask: radial-gradient(circle, transparent 55%, #000 57%); }

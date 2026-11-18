@@ -4,7 +4,7 @@ import { E, register, unregister, goView, toast, bringTablet, defineView, setHan
 import { W, PLATE_SCALE, EASEL_POS } from './world.js';
 import { buildBornes, buildGV2, buildLC1D, buildRelay, buildLink, hitbox, box, cyl, mat, labelPlane, screwMesh, PLATE, labelTexture } from './models.js';
 import { PARTS, TRAY_ORDER, SLOTS, RAILS, WIRES, CABLES, CUT_OPTIONS, STRIP_OPTIONS, FERRULES, WIRE_COLORS, MOTOR,
-  INTRO_CARDS, LESSON_CARDS, QUIZ, MOUNT_CARDS, WIRE_CARDS, ENCL_CARDS, TEST_INTRO, CHECKLIST, CHECK_EXPLAIN, ALIASES } from './data.js';
+  INTRO_CARDS, LESSON_CARDS, QUIZ, MOUNT_CARDS, WIRE_CARDS, ENCL_CARDS, TEST_INTRO, TEST_CARDS, CHECKLIST, CHECK_EXPLAIN, ALIASES } from './data.js';
 import { solve, ohm, volt } from './sim.js';
 import { drawBoard, WIRE_EST } from './diagrams.js';
 import { C, ICONS } from './ui.js';
@@ -58,7 +58,7 @@ export function initGame() {
   buildTray(); buildSlotMarkers(); buildRailScrewIA(); buildPEIA(); buildWireBench(); buildEnclosureIA(); buildConsole();
   estimateRoutes();
   E.update.push(tick);
-  E.onKey = (e) => { if (e.key === '1') setTool('mao'); if (e.key === '2') setTool('chave'); if (e.key === '3') setTool('multi'); };
+  E.onKey = (e) => { if (e.key.toLowerCase() === 'h') document.body.classList.toggle('hide-tablet'); if (e.key === '1') setTool('mao'); if (e.key === '2') setTool('chave'); if (e.key === '3') setTool('multi'); };
   E.onButton = (b) => { if (b === 'a') setTool(ses.tool === 'mao' ? 'chave' : ses.tool === 'chave' ? 'multi' : 'mao'); if (b === 'b') bringTablet(); };
   goView('projeto', true);
   refresh();
@@ -376,6 +376,12 @@ function connectClick(id) {
   ses.hand = null; ses.pending = null; showPendingMarker(null); sfx.snap();
   dirtyBoard(); toast(`Fio ${w.wid} ligado. Agora aperte as duas pontas com a chave de fenda.`, 'info', 3);
   refresh(); dirty();
+}
+let hintMks = [], hintT = 0;
+function showHint(ids) {
+  for (const m of hintMks) W.plateRoot.remove(m); hintMks = [];
+  for (const id of ids) { const t = termInfo(id); if (!t) { toast(`O componente de ${termLabel(id)} ainda não está na placa.`, 'warn'); continue; } const m = new THREE.Mesh(new THREE.TorusGeometry(0.009, 0.0015, 6, 20), new THREE.MeshBasicMaterial({ color: C.alerta, depthTest: false })); m.renderOrder = 900; m.position.copy(t.pos).add(new V3(0, 0, 0.008)); W.plateRoot.add(m); hintMks.push(m); }
+  hintT = 5; goView(st.plate.installed ? 'quadro' : 'placa');
 }
 let pendingMk = null;
 function showPendingMarker(id) {
@@ -710,6 +716,7 @@ function arcFlash(desc) {
   E.arcLight.position.copy(W.plateRoot.position).add(new V3(0, 0, 0.3));
 }
 function tick(dt) {
+  if (hintT > 0) { hintT -= dt; const sc = 1 + 0.3 * Math.sin(E.time * 10); for (const m of hintMks) m.scale.setScalar(sc); if (hintT <= 0) { for (const m of hintMks) W.plateRoot.remove(m); hintMks = []; } }
   // porta
   const D = W.door; D.open += ((st.door.open ? 1 : 0) - D.open) * Math.min(1, dt * 5); D.hinge.rotation.y = -D.open * 2.6;
   // placa animando
@@ -877,15 +884,15 @@ function startChallenge() {
   const pool = [...DEFECTS]; const pick = [];
   while (pick.length < 3) { const d = pool.splice(Math.floor(Math.random() * pool.length), 1)[0]; if (d === 'setting' && pick.includes('qmx')) continue; if (d === 'qmx' && pick.includes('setting')) continue; if (d === 'gauge' && pick.includes('swap')) continue; pick.push(d); }
   ses.defects = pick; ses.mode = 'desafio';
-  autoBuild(4, pick); ses.screen = 'teste'; ses.testIntro = true; goView('quadro'); dirty();
+  autoBuild(4, pick); ses.screen = 'teste'; ses.testIntro = true; ses.card = 0; goView('quadro'); dirty();
 }
 function goMission(m) {
-  ses.mode = 'normal';
+  resetAll(); ses.mode = 'normal';
   if (m === 'aula') { ses.screen = 'aula'; ses.card = 0; goView('projeto'); }
   if (m === 'mont') { ses.screen = 'mont'; ses.card = 0; ses.cardsSeen = false; goView('placa'); }
   if (m === 'cabos') { autoBuild(2); ses.screen = 'cabos'; ses.card = 0; ses.wireCards = true; goView('cabos'); }
   if (m === 'quadro') { autoBuild(3); ses.screen = 'quadro'; ses.card = 0; goView('quadro'); }
-  if (m === 'teste') { autoBuild(4); ses.screen = 'teste'; ses.testIntro = true; ses.item = 0; goView('quadro'); }
+  if (m === 'teste') { autoBuild(4); ses.screen = 'teste'; ses.testIntro = true; ses.card = 0; ses.item = 0; goView('quadro'); }
   dirty();
 }
 
@@ -1021,6 +1028,8 @@ function drawCabos(ui, a) {
   if (ses.hand?.type === 'wire') {
     const d = WIRES.find(w => w.id === ses.hand.piece.wid);
     ui.para(`Lista de fios: ${termLabel(d.from)} → ${termLabel(d.to)}.\nCom a Mão, toque no borne de origem e depois no de destino. Depois aperte as duas pontas com a chave de fenda.`, a.x, y, a.w, { size: 24 });
+    ui.button('hint', a.x, a.y + a.h - 44, 320, 56, 'Mostrar onde ligar', () => showHint([d.from, d.to]), { kind: 'ghost', size: 22 });
+    if (E.viewName !== 'placa' && E.viewName !== 'quadro') ui.button('gopl', a.x + a.w - 260, a.y + a.h - 44, 260, 56, 'Ir até a placa', () => goView(st.plate.installed ? 'quadro' : 'placa'), { kind: 'primary', size: 24 });
     return;
   }
   const loose = st.wires.reduce((s, w) => s + w.tight.filter(t => !t).length, 0);
@@ -1064,15 +1073,13 @@ function drawQuadro(ui, a) {
   progressRow(ui, a.x, y + 132, a.w, 'Apertar as 4 porcas da placa', nuts === 4, `${nuts}/4`);
   progressRow(ui, a.x, y + 188, a.w, 'Ligar a cordoalha de aterramento da porta', st.door.strap);
   if (!st.plate.installed) ui.button('gop', a.x, a.y + a.h - 44, 260, 56, 'Ir até a placa', () => goView('placa'), { kind: 'ghost', size: 22 });
-  ui.button('qdone', a.x + a.w - 300, a.y + a.h - 44, 300, 56, 'Ir para os testes', () => { ses.done.quadro = true; ses.screen = 'teste'; ses.testIntro = true; ses.item = 0; dirty(); }, { kind: 'primary', size: 24, disabled: !st.plate.installed });
+  ui.button('qdone', a.x + a.w - 300, a.y + a.h - 44, 300, 56, 'Ir para os testes', () => { ses.done.quadro = true; ses.screen = 'teste'; ses.testIntro = true; ses.card = 0; ses.item = 0; dirty(); }, { kind: 'primary', size: 24, disabled: !st.plate.installed });
 }
 function D_open() { return false; }
 function drawTeste(ui, a) {
   if (ses.testIntro) {
-    let y = header(ui, a, ses.mode === 'desafio' ? 'Desafio · RE-33' : 'Missão 5 · RE-33', TEST_INTRO.t);
-    y = ui.para(TEST_INTRO.b, a.x, y + 6, a.w, { size: 25 });
-    if (ses.mode === 'desafio') ui.para('Neste desafio, o painel foi montado por outra pessoa e tem 3 defeitos escondidos. Encontre todos com o checklist.', a.x, y + 10, a.w, { size: 24, color: C.alerta, weight: 600 });
-    ui.button('tstart', a.x + a.w - 280, a.y + a.h - 44, 280, 56, 'Começar os testes', () => { ses.testIntro = false; dirty(); }, { kind: 'primary', size: 24 });
+    const cards = [{ t: TEST_INTRO.t, b: TEST_INTRO.b + (ses.mode === 'desafio' ? '\n\nDESAFIO: este painel foi montado por outra pessoa e tem 3 defeitos escondidos. Encontre todos com o checklist.' : '') }, ...TEST_CARDS];
+    drawCards(ui, a, cards, ses.mode === 'desafio' ? 'Desafio · RE-33' : 'Missão 5 · RE-33', () => { ses.testIntro = false; ses.card = 0; dirty(); });
     return;
   }
   const it = currentItem(); const fb = ses.itemFb;

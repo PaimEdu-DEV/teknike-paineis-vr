@@ -62,7 +62,7 @@ export const WIRE_COLORS = { 'preto': '#1d1d1f', 'vd-am': '#3fae49', 'azul': '#1
 // ---------- Textos ----------
 export const INTRO_CARDS = [
   { t: 'Bem-vindo à oficina de painéis', b: 'Aqui você vai montar, de ponta a ponta, a partida direta do motor -M151 do projeto PAINEL MIÚDOS: ler o projeto, fixar os componentes, preparar e ligar os cabos, instalar a placa no quadro e testar tudo com o procedimento RE-33.\n\nVocê pode errar à vontade. Os erros vão aparecer nos testes, do jeito que aconteceria na fábrica, e cada um vem com a explicação do que deu errado.' },
-  { t: 'Como interagir', b: 'No óculos: aponte o laser do controle e aperte o gatilho para tocar. Segure o gatilho para apertar parafusos e crimpar. Use o analógico para girar o corpo. O botão A/X troca a ferramenta e o B/Y traz este painel para a sua frente.\n\nNo computador: clique para tocar e segure o botão para apertar. Arraste com o botão direito (ou em área vazia) para olhar em volta. W A S D movem a câmera.' },
+  { t: 'Como interagir', b: 'No óculos: aponte o laser do controle e aperte o gatilho para tocar. Segure o gatilho para apertar parafusos e crimpar. Use o analógico para girar o corpo. O botão A/X troca a ferramenta e o B/Y traz este painel para a sua frente.\n\nNo computador: clique para tocar e segure o botão para apertar. Arraste com o botão direito (ou em área vazia) para olhar em volta. W A S D movem a câmera e a tecla H esconde ou mostra este painel.' },
   { t: 'Ferramentas', b: 'Na barra de baixo você escolhe a ferramenta ativa:\n\nMão: pegar, colocar, acionar e retirar peças ou fios.\nChave de fenda: segure sobre um parafuso para apertar, ou sobre o dial do disjuntor-motor para regular.\nMultímetro: toque no primeiro ponto (ponta vermelha) e depois no segundo (ponta preta).\n\nOs botões do topo levam você até cada estação: Projeto, Placa, Cabos e Quadro.' },
   { t: 'Segurança em primeiro lugar', b: 'Na vida real, toda montagem é feita com o painel desenergizado, e todo teste energizado só é feito por profissional habilitado (NR-10), com EPI e com a área isolada.\n\nNo simulador você pode energizar fora de hora para ver a consequência, mas cada atitude insegura entra no seu relatório final.' },
 ];
@@ -100,6 +100,19 @@ export const ENCL_CARDS = [
   { t: 'Instalando a placa no quadro', b: '1. Abra a porta do quadro (Mão, na maçaneta).\n2. Pegue a placa montada na bancada (Mão, na borda laranja da placa) e toque no interior do quadro.\n3. Aperte as 4 porcas de fixação da placa (chave de fenda).\n4. Ligue a cordoalha de aterramento da porta: Mão na cordoalha.\n\nA placa e a porta precisam estar aterradas: é o que protege quem encostar no quadro se um fio vivo tocar a carcaça.' },
 ];
 
+export const TEST_CARDS = [
+  { t: 'Usando o multímetro', b: `Escolha a ferramenta Multímetro e o modo no próprio aparelho, que fica no console: Ω (resistência e continuidade), Vca (tensão alternada) ou Vcc (tensão contínua). Toque no primeiro ponto (ponta vermelha) e depois no segundo (ponta preta).
+
+Em Ω, "0,0 Ω" com bipe quer dizer que há continuidade (estão ligados). "OL" quer dizer circuito aberto (não estão ligados). Um valor intermediário, como 240 Ω, é uma carga no meio, por exemplo uma bobina.` },
+  { t: 'Primeiro desligado, depois energizado', b: `A RE-33 segue uma ordem de propósito: inspeção visual, depois testes de continuidade e curto com o painel DESENERGIZADO, e só então energização.
+
+Nunca meça resistência com o circuito energizado: o multímetro pode queimar e a leitura não vale nada. Antes de energizar, isole a área. Se houver um curto que passou despercebido, ele vira arco elétrico na hora de ligar.` },
+  { t: 'OK, NOK ou NA', b: `OK: verifiquei e está conforme.
+NOK: verifiquei e encontrei uma não conformidade. Corrija e verifique de novo.
+NA: o item não se aplica a este painel (por exemplo, não existe calefator).
+
+Marcar OK sem verificar é o erro mais caro de todos: o defeito sai da fábrica junto com o painel.` },
+];
 export const TEST_INTRO = { t: 'Teste do painel (RE-33)', b: 'Agora você vai seguir o procedimento RE-33, o mesmo checklist usado na fábrica. Para cada item:\n\n1. Leia o que precisa ser verificado\n2. Faça a verificação (olhar, medir, acionar)\n3. Marque OK, NOK (não conforme) ou NA (não se aplica)\n\nSe marcar NOK, encontre a causa, corrija e verifique de novo. Se aprovar algo com defeito, o problema vai aparecer mais à frente, como acontece na vida real.' };
 
 // Itens do checklist. need = verificações obrigatórias antes de marcar.
