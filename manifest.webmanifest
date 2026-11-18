@@ -1,0 +1,9 @@
+{
+  "name": "Teknike Painéis VR",
+  "short_name": "Painéis VR",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0B2A1D",
+  "theme_color": "#0B2A1D",
+  "icons": [{ "src": "assets/teknike/logo/teknike-simbolo-cor.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

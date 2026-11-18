@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teknike Painéis VR</title>
+<meta name="description" content="Treino em realidade virtual: interpretar projeto, montar, ligar e testar um painel elétrico (partida direta).">
+<meta name="theme-color" content="#0B2A1D">
+<link rel="icon" href="assets/teknike/logo/teknike-simbolo-cor.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  @font-face { font-family: 'Archivo'; src: url(assets/teknike/fonts/archivo-latin-400-normal.woff2) format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'Archivo'; src: url(assets/teknike/fonts/archivo-latin-600-normal.woff2) format('woff2'); font-weight: 600; }
+  @font-face { font-family: 'Archivo'; src: url(assets/teknike/fonts/archivo-latin-700-normal.woff2) format('woff2'); font-weight: 700; }
+  :root { --verde: #56B951; --preto: #100F0D; --floresta: #0B2A1D; --verdeTxt: #2A7F36; --cinza: #6C6E70; --apoio2: #F5F5F5; --branco: #fff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--floresta); font-family: Archivo, Arial, sans-serif; color: var(--branco); }
+  #app canvas { display: block; }
+  #tablet { position: fixed; left: 12px; top: 12px; width: min(46vw, 760px); height: auto; border: 1px solid #24513a; z-index: 5; touch-action: none; }
+  body.in-vr #tablet, body.in-vr #tip { display: none; }
+  #tip { position: fixed; display: none; pointer-events: none; background: rgba(11,42,29,.94); color: #fff; font: 600 14px Archivo, Arial; padding: 6px 10px; z-index: 9; max-width: 420px; }
+  #ring { position: fixed; display: none; width: 34px; height: 34px; margin: -30px 0 0 -40px; border-radius: 50%; pointer-events: none; z-index: 9;
+    background: conic-gradient(var(--verde) calc(var(--p) * 1%), rgba(255,255,255,.25) 0); -webkit-mask: radial-gradient(circle, transparent 55%, #000 57%); mask: radial-gradient(circle, transparent 55%, #000 57%); }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 30px); opacity: 0; transition: .25s; max-width: min(720px, 90vw); padding: 14px 18px 14px 22px;
+    background: #1d2b24; border-left: 6px solid #E8A33D; font: 600 16px/1.4 Archivo, Arial; z-index: 10; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #toast.err { background: #5c1d14; border-color: #E0533D; } #toast.ok { background: var(--floresta); border-color: var(--verde); }
+  #start { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: var(--floresta); transition: opacity .3s; padding: 16px; }
+  #start.hide { opacity: 0; pointer-events: none; }
+  .card { width: min(640px, 100%); background: var(--branco); color: var(--preto); padding: 40px; clip-path: polygon(0 0, calc(100% - 40px) 0, 100% 23px, 100% 100%, 0 100%); }
+  .card img { width: 220px; height: auto; display: block; margin-bottom: 28px; }
+  .eyebrow { font: 600 12px 'IBM Plex Mono', monospace; letter-spacing: .18em; text-transform: uppercase; color: var(--verdeTxt); margin: 0 0 8px; }
+  h1 { font-size: 34px; line-height: 40px; margin: 0 0 12px; }
+  p { font-size: 16px; line-height: 24px; color: #3a3c3e; margin: 0 0 24px; }
+  .btns { display: flex; gap: 12px; flex-wrap: wrap; }
+  button { height: 48px; padding: 0 28px; font: 600 15px Archivo, Arial; border: 0; cursor: pointer; }
+  .primary { background: var(--verde); color: var(--preto); clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 12px, 100% 100%, 0 100%); }
+  .primary:hover { background: var(--verdeTxt); color: #fff; }
+  .primary:disabled { background: #c9cbcd; color: #6C6E70; cursor: default; }
+  .secondary { background: var(--branco); color: var(--preto); box-shadow: inset 0 0 0 2px var(--preto); }
+  .secondary:hover { background: #EFF7EF; }
+  button:focus-visible { outline: 2px solid var(--preto); outline-offset: 4px; }
+  .small { font-size: 13px; line-height: 18px; color: var(--cinza); margin: 20px 0 0; }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; z-index: 30; background: var(--floresta); font: 600 14px 'IBM Plex Mono', monospace; letter-spacing: .18em; color: var(--verde); }
+  @media (max-width: 760px) { #tablet { width: calc(100vw - 24px); top: auto; bottom: 12px; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="tip"></div>
+<div id="ring"></div>
+<div id="toast"></div>
+<div id="start">
+  <div class="card">
+    <img src="assets/teknike/logo/teknike-logo-completo-cor.svg" alt="Teknike">
+    <p class="eyebrow">Oficina de painéis · treino em VR</p>
+    <h1>Monte e teste um painel elétrico</h1>
+    <p>Interprete o projeto, fixe os componentes, prepare e ligue os cabos, instale a placa no quadro e teste tudo com o procedimento RE-33. Aqui você pode errar: cada erro vira aprendizado.</p>
+    <div class="btns">
+      <button id="btn-vr" class="primary" disabled>Verificando VR…</button>
+      <button id="btn-pc" class="secondary">Jogar no computador</button>
+    </div>
+    <p class="small">No óculos: abra este endereço no navegador do headset e toque em "Entrar em VR". No computador: clique para interagir, botão direito para olhar em volta, W A S D para andar.</p>
+  </div>
+</div>
+<div id="loading">CARREGANDO</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

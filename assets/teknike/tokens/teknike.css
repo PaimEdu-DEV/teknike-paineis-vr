@@ -1,0 +1,100 @@
+/* ==========================================================================
+   Teknike — tokens e componentes base
+   Fonte: Sistema Visual Teknike (versão ajustada 2026), pranchas 03, 05, 07B, 09, 10.
+   Ajuste @font-face url() conforme a pasta onde os arquivos forem copiados.
+   ========================================================================== */
+
+@font-face { font-family: "Archivo"; font-weight: 400; font-display: swap; src: url("../fonts/archivo-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Archivo"; font-weight: 500; font-display: swap; src: url("../fonts/archivo-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Archivo"; font-weight: 600; font-display: swap; src: url("../fonts/archivo-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Archivo"; font-weight: 700; font-display: swap; src: url("../fonts/archivo-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 500; font-display: swap; src: url("../fonts/ibm-plex-mono-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 600; font-display: swap; src: url("../fonts/ibm-plex-mono-latin-600-normal.woff2") format("woff2"); }
+
+:root {
+  /* Paleta fechada (prancha 03) */
+  --tk-verde-marca: #56B951;   /* logo, símbolo, acentos. NUNCA texto sobre branco (2,5:1) */
+  --tk-preto: #100F0D;         /* textos, títulos, logo (tela). Impresso: preto composto */
+  --tk-verde-texto: #2A7F36;   /* letras verdes sobre fundo claro, 5,0:1 (AA); hover do botão principal */
+  --tk-floresta: #0B2A1D;      /* fundo escuro versátil, 15,4:1 com branco */
+  --tk-cinza-texto: #6C6E70;   /* legendas e apoio, 5,1:1 sobre branco */
+  --tk-apoio-1: #E6E6E6;       /* linhas, divisores, fundos de card */
+  --tk-apoio-2: #F5F5F5;       /* fundo de página e de card claro */
+  --tk-branco: #FFFFFF;
+
+  /* Auxiliares */
+  --tk-tint-10: #EFF7EF;
+  --tk-tint-20: #DEF0DF;
+  --tk-hairline: #E2E8E4;      /* linha de cards */
+
+  /* Tipografia */
+  --tk-font: "Archivo", Arial, sans-serif;           /* única família do sistema; fallback comercial: Arial */
+  --tk-font-mono: "IBM Plex Mono", ui-monospace, monospace; /* só rótulos/dados técnicos de peças digitais */
+
+  /* Espaçamento — base 8 px */
+  --tk-space-1: 4px;  --tk-space-2: 8px;  --tk-space-3: 16px; --tk-space-4: 24px;
+  --tk-space-5: 32px; --tk-space-6: 48px; --tk-space-7: 64px; --tk-space-8: 96px;
+
+  /* Forma */
+  --tk-radius: 16px;           /* alternativa "pílula/raio" */
+  --tk-cut-w: 20px;            /* corte 30° em botões de 48 px */
+  --tk-cut-h: 12px;
+  --tk-cut-box-w: 40px;        /* corte 30° em blocos maiores */
+  --tk-cut-box-h: 23px;
+}
+
+html { font-family: var(--tk-font); color: var(--tk-preto); background: var(--tk-branco); }
+body { font-size: 16px; line-height: 24px; font-weight: 400; }
+
+/* Escala tipográfica (prancha 07B) */
+.tk-display { font: 700 64px/72px var(--tk-font); letter-spacing: -0.02em; }
+.tk-h1      { font: 700 48px/56px var(--tk-font); }
+.tk-h2      { font: 700 32px/40px var(--tk-font); }
+.tk-h3      { font: 600 24px/32px var(--tk-font); }
+.tk-body    { font: 400 16px/24px var(--tk-font); }
+.tk-caption { font: 400 13px/18px var(--tk-font); color: var(--tk-cinza-texto); }
+.tk-label   { font: 600 11px/14px var(--tk-font); text-transform: uppercase; letter-spacing: .18em; color: var(--tk-verde-texto); }
+/* Rótulo mono: uso interno do design, etiquetas e dados técnicos */
+.tk-mono    { font: 600 11px/14px var(--tk-font-mono); text-transform: uppercase; letter-spacing: .18em; color: var(--tk-verde-texto); }
+
+/* Botões (prancha 10): 48 px desktop / 44 px mobile, padding 28 px, rótulo Archivo SemiBold 15 */
+.tk-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 48px; padding: 0 28px; border: 2px solid transparent;
+  font: 600 15px/1 var(--tk-font); cursor: pointer; text-decoration: none;
+  transition: background .15s, color .15s, border-color .15s;
+}
+@media (max-width: 640px) { .tk-btn { height: 44px; } }
+.tk-btn + .tk-btn { margin-left: 16px; }
+/* Formato assinatura: canto superior direito cortado a 30° (use UM formato por tela) */
+.tk-btn--cut  { clip-path: polygon(0 0, calc(100% - var(--tk-cut-w)) 0, 100% var(--tk-cut-h), 100% 100%, 0 100%); }
+.tk-btn--pill { border-radius: 24px; }
+/* Principal: verde marca + texto PRETO (branco sobre verde marca = 2,5:1, proibido) */
+.tk-btn--primary { background: var(--tk-verde-marca); color: var(--tk-preto); }
+.tk-btn--primary:hover { background: var(--tk-verde-texto); color: var(--tk-branco); }
+.tk-btn--secondary { background: transparent; color: var(--tk-preto); border-color: var(--tk-preto); }
+.tk-btn--tertiary { background: transparent; color: var(--tk-preto); padding: 0; border: 0; }
+.tk-on-dark .tk-btn--secondary { color: var(--tk-branco); border-color: var(--tk-branco); }
+.tk-on-dark .tk-btn--tertiary { color: var(--tk-branco); }
+.tk-btn:focus-visible { outline: 2px solid var(--tk-preto); outline-offset: 4px; }
+.tk-on-dark .tk-btn:focus-visible { outline-color: var(--tk-branco); }
+.tk-btn:disabled, .tk-btn[aria-disabled="true"] { background: var(--tk-apoio-1); color: var(--tk-cinza-texto); border-color: transparent; cursor: not-allowed; pointer-events: none; }
+
+/* Cards e boxes (prancha 10) */
+.tk-card { background: var(--tk-apoio-2); border: 1px solid var(--tk-hairline); padding: 24px; box-shadow: none; }
+.tk-card--cut { clip-path: polygon(0 0, calc(100% - var(--tk-cut-box-w)) 0, 100% var(--tk-cut-box-h), 100% 100%, 0 100%); }
+.tk-card--round { border-radius: var(--tk-radius); }
+.tk-bar-quote { border-left: 4px solid var(--tk-verde-marca); padding-left: 16px; border-radius: 0; } /* barra verde: totalmente reta */
+.tk-box { padding: 24px; }                      /* UM box de destaque por página */
+.tk-box--floresta { background: var(--tk-floresta); color: var(--tk-branco); }
+.tk-box--verde    { background: var(--tk-verde-marca); color: var(--tk-preto); }
+.tk-box--preto    { background: var(--tk-preto); color: var(--tk-branco); }
+.tk-box--citacao  { background: var(--tk-tint-10); color: var(--tk-preto); }
+.tk-box--cut   { clip-path: polygon(0 0, calc(100% - var(--tk-cut-box-w)) 0, 100% var(--tk-cut-box-h), 100% 100%, 0 100%); }
+.tk-box--round { border-radius: var(--tk-radius); }
+
+/* Logo: nunca distorcer; respeitar mínimos (completo 166 px, compacto 96 px, símbolo 30 px) */
+.tk-logo { display: block; height: auto; }
+.tk-logo--completo { min-width: 166px; }
+.tk-logo--compacto { min-width: 96px; }
+.tk-logo--simbolo  { min-width: 30px; }
