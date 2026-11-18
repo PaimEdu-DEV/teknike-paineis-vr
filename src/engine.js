@@ -34,7 +34,7 @@ export function initEngine(container) {
   E.raycaster = new THREE.Raycaster(); E.raycaster.near = 0.01; E.raycaster.far = 8;
 
   let last = performance.now();
-  r.setAnimationLoop((t, frame) => {
+  E.loop = (t, frame) => {
     const now = performance.now(); const dt = Math.min(0.05, (now - last) / 1000); last = now;
     E.time = now / 1000;
     tickDesktop(dt);
@@ -45,7 +45,8 @@ export function initEngine(container) {
     tickToast(dt);
     tickFade(dt);
     r.render(scene, cam);
-  });
+  };
+  r.setAnimationLoop(E.loop);
 }
 
 // ---------- Registro de interativos ----------
@@ -56,7 +57,10 @@ function pick(ray) {
   E.raycaster.ray.copy(ray);
   const live = E.clickables.filter(o => o.userData.ia && isVisible(o) && (!o.userData.ia.enabled || o.userData.ia.enabled()));
   const hits = E.raycaster.intersectObjects(live, false);
-  return hits[0] || null;
+  if (!hits.length) return null;
+  // prefere o primeiro objeto que aceita a ação atual (evita que uma área maior tape um borne)
+  for (const h of hits.slice(0, 6)) { const ia = h.object.userData.ia; if (ia.panel) return h; try { if (ia.action && ia.action(h, null)) return h; } catch (e) { } }
+  return hits[0];
 }
 function isVisible(o) { while (o) { if (o.visible === false && !(o.material && o.material.visible === false && o.userData.ia)) return false; o = o.parent; } return true; }
 

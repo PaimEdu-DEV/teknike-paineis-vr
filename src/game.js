@@ -90,7 +90,7 @@ function placePart(key, slot) {
   W.plateRoot.add(b.group);
   const rec = { ...b, key, slot, role, hits: [] };
   // corpo (retirar)
-  const body = hitbox(b.size.w, b.size.h * 0.7, 0.01, 0, -b.size.h * 0.1, b.size.d / 2 + 0.002); b.group.add(body);
+  const body = hitbox(b.size.w, b.size.h * 0.5, 0.01, 0, -b.size.h * 0.05, b.size.d / 2 - 0.004); b.group.add(body);
   register(body, {
     label: () => `${PARTS[key].tag} · ${PARTS[key].name} · ${PARTS[key].code}`,
     action: () => {
@@ -191,7 +191,7 @@ function updateMarkers() {
   for (const [id, m] of Object.entries(slotMarkers)) m.visible = ses.hand?.type === 'part' && slotFree(id) && !st.plate.installed;
   const ok = linkAligned();
   linkMarker.visible = ses.hand?.type === 'link' && !!ok;
-  if (ok) linkMarker.position.set(SLOTS[st.placed.QM.slot].x, 0.0795, 0.04);
+  if (ok) linkMarker.position.set(SLOTS[st.placed.QM.slot].x, 0.0795, 0.088);
 }
 function linkAligned() {
   const q = st.placed.QM, k = st.placed.KM; if (!q || !k) return false;
@@ -203,7 +203,7 @@ function dropOnSlot(id) {
   if (!slotFree(id)) return;
   placePart(key, id); ses.hand = null; updateMarkers(); refresh(); dirty();
 }
-function tryLinkClick() { if (!linkAligned()) { toast('O link GV2AF3 só encaixa com o contator logo abaixo do disjuntor-motor. Confira o layout.', 'err'); logErr('Montagem', 'Tentou instalar o link com o contator fora da posição do layout', 3); } }
+function tryLinkClick() { if (linkAligned()) return installLink(); { toast('O link GV2AF3 só encaixa com o contator logo abaixo do disjuntor-motor. Confira o layout.', 'err'); logErr('Montagem', 'Tentou instalar o link com o contator fora da posição do layout', 3); } }
 function installLink() {
   if (!linkAligned()) return tryLinkClick();
   st.link.installed = true; st.link.tight = false; ses.hand = null;
@@ -351,6 +351,7 @@ function termAction(id) {
     return { type: 'hold', time: 0.7, run: () => { w.tight[i] = true; sfx.tight(); dirty(); } };
   }
   if (tool === 'mao' && ses.hand?.type === 'wire') return { type: 'click', run: () => connectClick(id) };
+  if (tool === 'mao' && ses.hand?.type === 'link') return { type: 'click', run: () => tryLinkClick() };
   return null;
 }
 function connectClick(id) {
@@ -615,10 +616,18 @@ function buildConsole() {
   shaft.add(cyl(0.008, 0.03, '#b9bdc1', 0, 0, 0, 'x', 10));
   const disk = cyl(0.028, 0.006, '#e6e6e6', -0.018, 0, 0, 'x', 20); shaft.add(disk);
   shaft.add(box(0.007, 0.024, 0.006, '#d0342c', -0.022, 0.012, 0));
-  // seta do sentido correto
-  const ar = labelPlane([{ t: '↻ sentido', size: 34, bold: true }], 0.06, 0.03, { w: 160, h: 80, bg: '#f2c12e' }); ar.position.set(-0.07, 0.15, 0.0); ar.rotation.y = -Math.PI / 2; m.add(ar);
-  const np = labelPlane([{ t: '-M151 · Motor de teste', size: 24, bold: true }, { t: `${MOTOR.kw} · ${MOTOR.v} · ${MOTOR.hz}`, size: 22 }, { t: `In = ${fmtA(MOTOR.inom)} · ${MOTOR.rpm}`, size: 26, bold: true }], 0.1, 0.05, { w: 300, h: 150, bg: '#e6e6e6' });
-  np.position.set(0.02, 0.075, 0.0565); m.add(np);
+  m.rotation.y = Math.PI / 2; // eixo apontando para o aluno
+  // seta do sentido correto (desenhada) e placa de identificação
+  const ac = document.createElement('canvas'); ac.width = 256; ac.height = 256; const ak = ac.getContext('2d');
+  ak.fillStyle = '#f2c12e'; ak.fillRect(0, 0, 256, 256); ak.strokeStyle = '#100F0D'; ak.lineWidth = 18; ak.beginPath(); ak.arc(128, 140, 70, Math.PI * 1.1, Math.PI * 2.25); ak.stroke();
+  const ex = 128 + 70 * Math.cos(Math.PI * 2.25), ey = 140 + 70 * Math.sin(Math.PI * 2.25);
+  ak.fillStyle = '#100F0D'; ak.beginPath(); ak.moveTo(ex + 26, ey - 18); ak.lineTo(ex - 22, ey - 6); ak.lineTo(ex + 6, ey + 34); ak.closePath(); ak.fill();
+  ak.font = '700 34px Archivo, Arial'; ak.textAlign = 'center'; ak.fillText('SENTIDO', 128, 44);
+  const at = new THREE.CanvasTexture(ac); at.colorSpace = THREE.SRGBColorSpace;
+  const ar = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.05), new THREE.MeshBasicMaterial({ map: at }));
+  ar.position.set(0.39, Y + 0.075, -0.035); g.add(ar);
+  const np = labelPlane([{ t: '-M151 · Motor de teste', size: 24, bold: true }, { t: `${MOTOR.kw} · ${MOTOR.v} · ${MOTOR.hz}`, size: 22 }, { t: `In = ${fmtA(MOTOR.inom)} · ${MOTOR.rpm}`, size: 26, bold: true }], 0.11, 0.055, { w: 300, h: 150, bg: '#e6e6e6' });
+  np.position.set(0.32, Y + 0.03, 0.03); np.rotation.x = -0.5; g.add(np);
   // multímetro
   const mm = new THREE.Group(); mm.position.set(0.05, Y, -0.17); mm.rotation.x = -0.5; g.add(mm);
   mm.add(box(0.1, 0.17, 0.035, '#f2c12e', 0, 0.09, 0)); mm.add(box(0.085, 0.15, 0.036, '#2a2e33', 0, 0.09, 0.001));
@@ -701,7 +710,7 @@ function arcFlash(desc) {
 }
 function tick(dt) {
   // porta
-  const D = W.door; D.open += ((st.door.open ? 1 : 0) - D.open) * Math.min(1, dt * 5); D.hinge.rotation.y = -D.open * 1.95;
+  const D = W.door; D.open += ((st.door.open ? 1 : 0) - D.open) * Math.min(1, dt * 5); D.hinge.rotation.y = -D.open * 2.6;
   // placa animando
   if (plateAnim) { plateAnim.t = Math.min(1, plateAnim.t + dt / 1.4); const s = plateAnim.t < 0.5 ? 2 * plateAnim.t ** 2 : 1 - (-2 * plateAnim.t + 2) ** 2 / 2; W.plateRoot.position.lerpVectors(plateAnim.from, plateAnim.to, s); W.plateRoot.position.y += Math.sin(s * Math.PI) * 0.25; if (plateAnim.t >= 1) plateAnim = null; updateProbes(); }
   // arco
@@ -1121,4 +1130,4 @@ function drawDial(ui, a) {
 
 // regulagem inicial dependente da peça
 export function onPartChanged() { const p = st.placed.QM && PARTS[st.placed.QM.key]; if (p && (st.qm.setting < p.range[0] || st.qm.setting > p.range[1])) st.qm.setting = p.range[0]; }
-window.__game = { get st() { return st; }, ses, autoBuild, goMission, startChallenge, truth, resetAll, CHECKLIST, solve: () => solve(st), markItem, nextItem, doTraction, setPower, setOut10, setQM, toggleMotor, probe, setTool };
+window.__game = { get st() { return st; }, trayItems, slotMarkers, get linkMarker() { return linkMarker; }, get linkMesh() { return linkMesh; }, WB, termHits, plateNuts, CON, wireMeshes, get interiorHit() { return interiorHit; }, ses, autoBuild, goMission, startChallenge, truth, resetAll, CHECKLIST, solve: () => solve(st), markItem, nextItem, doTraction, setPower, setOut10, setQM, toggleMotor, probe, setTool };
