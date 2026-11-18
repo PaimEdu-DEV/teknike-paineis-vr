@@ -9,6 +9,7 @@ class UF {
 }
 
 const PHASE = { L1: 0, L2: 120, L3: 240 };
+const VF = 380 / Math.sqrt(3); // tensão de fase para 380 V entre fases
 
 export function partKey(st, role) { return st.placed[role]?.key; }
 export function partOf(st, role) { const k = partKey(st, role); return k ? PARTS[k] : null; }
@@ -150,7 +151,7 @@ export function volt(st, a, b, mode) {
   if (!st.power || S.shorts.length) return 0;
   const sa = S.src(a), sb = S.src(b);
   if (mode === 'vac') {
-    const vec = (s) => s in PHASE ? [220 * Math.cos(PHASE[s] * Math.PI / 180), 220 * Math.sin(PHASE[s] * Math.PI / 180)] : (s === 'G' ? [0, 0] : null);
+    const vec = (s) => s in PHASE ? [VF * Math.cos(PHASE[s] * Math.PI / 180), VF * Math.sin(PHASE[s] * Math.PI / 180)] : (s === 'G' ? [0, 0] : null);
     const va = vec(sa), vb = vec(sb);
     if (!va || !vb) return 0;
     return Math.hypot(va[0] - vb[0], va[1] - vb[1]);

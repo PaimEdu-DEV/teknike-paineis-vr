@@ -393,7 +393,7 @@ function probe(id) {
   if (mode === 'ohm') {
     if (st.power) { txt = 'ERRO'; logErr('Segurança', 'Mediu resistência com o painel energizado (risco de queimar o multímetro)', 5); toast('Nunca meça resistência/continuidade com o circuito energizado.', 'err'); }
     else { val = ohm(st, a, b); txt = val === Infinity ? 'OL' : (val === 0 ? '0,0 Ω' : `${Math.round(val)} Ω`); if (val === 0) sfx.beep(); }
-  } else { val = volt(st, a, b, mode); txt = `${(Math.round(val * 10) / 10).toFixed(1).replace('.', ',')} V${mode === 'vac' ? '~' : '⎓'}`; }
+  } else { val = volt(st, a, b, mode); txt = `${(Math.round(val * 10) / 10).toFixed(1).replace('.', ',')} ${mode === 'vac' ? 'Vca' : 'Vcc'}`; }
   ses.reading = { a, b, mode, txt };
   ses.meas.push({ mode, a, b, val });
   updateProbes([a, b]); meterDisplay(); dirty();
@@ -635,7 +635,7 @@ function buildConsole() {
   const disp = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.0375), new THREE.MeshBasicMaterial({ map: CON.dispT })); disp.position.set(0, 0.135, 0.0195); mm.add(disp);
   ['ohm', 'vac', 'vdc'].forEach((md, i) => {
     const b = box(0.022, 0.016, 0.006, '#56B951', -0.026 + i * 0.026, 0.085, 0.02); mm.add(b);
-    const l = labelPlane([{ t: md === 'ohm' ? 'Ω' : md === 'vac' ? 'V~' : 'V⎓', size: 44, bold: true, color: '#fff' }], 0.02, 0.012, { w: 64, h: 40, bg: '#2a2e33' }); l.position.set(-0.026 + i * 0.026, 0.068, 0.0195); mm.add(l);
+    const l = labelPlane([{ t: md === 'ohm' ? 'Ω' : md === 'vac' ? 'Vca' : 'Vcc', size: 44, bold: true, color: '#fff' }], 0.02, 0.012, { w: 64, h: 40, bg: '#2a2e33' }); l.position.set(-0.026 + i * 0.026, 0.068, 0.0195); mm.add(l);
     register(b, { label: `Multímetro: modo ${md === 'ohm' ? 'resistência/continuidade' : md === 'vac' ? 'tensão alternada' : 'tensão contínua'}`, action: () => ({ type: 'click', run: () => { ses.meter = md; setTool('multi'); meterDisplay(); } }) });
   });
   const mmHit = hitbox(0.1, 0.06, 0.04, 0, 0.03, 0.0); mm.add(mmHit);
@@ -644,7 +644,7 @@ function buildConsole() {
 }
 function meterDisplay() {
   const k = CON.dispC.getContext('2d'); k.fillStyle = '#b9c9a8'; k.fillRect(0, 0, 256, 128);
-  k.fillStyle = '#1a2416'; k.font = '600 22px "IBM Plex Mono", monospace'; k.fillText((ses.meter || 'ohm') === 'ohm' ? 'Ω  CONT' : ses.meter === 'vac' ? 'V~ AC' : 'V⎓ DC', 12, 30);
+  k.fillStyle = '#1a2416'; k.font = '600 22px "IBM Plex Mono", monospace'; k.fillText((ses.meter || 'ohm') === 'ohm' ? 'Ω  CONT' : ses.meter === 'vac' ? 'Vca AC' : 'Vcc DC', 12, 30);
   k.font = '700 54px "IBM Plex Mono", monospace'; k.textAlign = 'right'; k.fillText(ses.reading?.txt?.replace(/ ?[VΩ].*$/, '') || '----', 244, 100); k.textAlign = 'left';
   CON.dispT.needsUpdate = true;
 }
@@ -702,6 +702,7 @@ function refresh() {
   if (S.motor.state !== 'run' && S.motor.state !== 'falta') motorT = 0;
 }
 function arcFlash(desc) {
+  desc = desc.split(' × ').map(x => ({ G: 'terra', 'DC+': '+24 V', DC0: '0 V' })[x] || x).join(' com ');
   sfx.arc(); ses.arcT = 0.6;
   logErr('Segurança', `Energizou com curto-circuito (${desc}): arco elétrico e desarme do disjuntor geral`, 20);
   toast('CURTO-CIRCUITO! O disjuntor geral desarmou. No mundo real isso gera arco elétrico, queimaduras e dano ao painel. Desenergize, revise a fiação e refaça os testes 2.4 e 2.5.', 'err', 8);
@@ -742,7 +743,7 @@ function inSet(id, A) { const arr = typeof A === 'string' ? ALIASES[A] : A; retu
 function measDone(m) { return ses.meas.some(h => h.mode === m[0] && ((inSet(h.a, m[1]) && inSet(h.b, m[2])) || (inSet(h.b, m[1]) && inSet(h.a, m[2])))); }
 function measLabel(m) {
   const nm = (A) => typeof A === 'string' ? ({ L1: 'L1', L2: 'L2', L3: 'L3', PE: 'PE', SP: 'S+', ZV: '0V' })[A] : A.map(termLabel)[0].replace(/ \(.*\)$/, '');
-  return `${m[0] === 'ohm' ? 'Ω' : m[0] === 'vac' ? 'V~' : 'V⎓'}  ${nm(m[1])} × ${nm(m[2])}`;
+  return `${m[0] === 'ohm' ? 'Ω' : m[0] === 'vac' ? 'Vca' : 'Vcc'}  ${nm(m[1])} × ${nm(m[2])}`;
 }
 function needDone(n) {
   if (n === 'qmOn') return st.qm.on; if (n === 'qmOff') return !st.qm.on; if (n === 'cones') return st.cones; if (n === 'power') return st.power;
@@ -786,7 +787,7 @@ function doTraction() {
   let n = 0;
   for (const w of st.wires) w.ends.forEach((e, i) => { if (!w.popped[i] && badEnd(e, w, i)) { w.popped[i] = true; n++; } });
   ses.flags.traction = true; redrawAllWires(); refresh(); sfx.snap();
-  toast(n ? `${n} ponta(s) de fio soltaram no teste de tração!` : 'Todos os fios resistiram ao teste de tração.', n ? 'warn' : 'ok', 4); dirty();
+  toast(n ? `${pl(n, 'ponta de fio soltou', 'pontas de fio soltaram')} no teste de tração!` : 'Todos os fios resistiram ao teste de tração.', n ? 'warn' : 'ok', 4); dirty();
 }
 function currentItem() { return CHECKLIST[ses.item]; }
 function markItem(mark) {
@@ -804,7 +805,7 @@ function markItem(mark) {
   else if (mark === 'OK') fb = { ok: false, found: true, missed: true, t: 'Atenção: você aprovou um item com defeito. Na fábrica, isso só seria descoberto no cliente. ' + CHECK_EXPLAIN[it.check] };
   else fb = { ok: false, t: 'Aqui não há defeito: o item está conforme. Refaça a verificação com calma.' };
   if (!fb.ok) logErr('Teste', `Item ${it.id}: ${fb.missed ? 'aprovou com defeito' : 'marcação incorreta'}`, fb.missed ? 8 : 3);
-  if (fb.found) { (ses.ncs ||= []).push(`${it.id} · ${it.text}`); }
+  if (fb.found) { (ses.ncs ||= []).push(`${it.id} · ${it.text}`); if (!fb.missed) (ses.foundIds ||= []).push(it.id); else (ses.missedIds ||= []).push(it.id); }
   ses.itemFb = { ...fb, mark, tr }; ses.lastMark = mark;
   if (fb.ok && !fb.found) ses.marks[it.id] = mark;
   if (fb.ok && fb.found) ses.marks[it.id] = null;
@@ -889,6 +890,7 @@ function goMission(m) {
 }
 
 // ================= Tablet =================
+const pl = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
 const fmtA = (a) => String(Math.round(a * 10) / 10).replace('.', ',') + ' A';
 const fmtB = (b) => String(b).replace('.', ',') + ' mm²';
 const corName = (c) => c === 'vd-am' ? 'verde-amarelo' : c;
@@ -924,7 +926,7 @@ function drawTablet() {
   if (ses.hand?.type === 'part' || ses.hand?.type === 'link') hand = 'Na mão: ' + PARTS[ses.hand.key].tag + ' ' + PARTS[ses.hand.key].code;
   if (ses.hand?.type === 'wire') hand = `Na mão: fio ${ses.hand.piece.wid}` + (ses.pending ? ` · origem ${termLabel(ses.pending)}` : '');
   if (ses.hand?.type === 'plate') hand = 'Na mão: placa de montagem';
-  if (ses.tool === 'multi') hand = `Multímetro ${({ ohm: 'Ω', vac: 'V~', vdc: 'V⎓' })[ses.meter || 'ohm']} · ` + (ses.reading ? `${ses.reading.txt}` : ses.probe ? 'toque no 2º ponto' : 'toque no 1º ponto');
+  if (ses.tool === 'multi') hand = `Multímetro ${({ ohm: 'Ω', vac: 'Vca', vdc: 'Vcc' })[ses.meter || 'ohm']} · ` + (ses.reading ? `${ses.reading.txt}` : ses.probe ? 'toque no 2º ponto' : 'toque no 1º ponto');
   ui.text(hand, x + 14, 828, { size: 22, color: C.txt2, weight: 600 });
   setHandTag(ses.hand || ses.tool === 'multi' ? hand.replace('Na mão: ', '') : (ses.tool === 'chave' ? 'Chave de fenda' : null));
   if (ses.hand) ui.button('drop', Wd - 150, 790, 126, 60, 'Soltar', () => dropHand(), { kind: 'ghost', size: 22 });
@@ -979,7 +981,7 @@ function drawQuiz(ui, a) {
     ui.button('qnext', a.x + a.w - 260, a.y + a.h - 44, 260, 56, retry ? 'Tentar de novo' : (last ? 'Concluir missão' : 'Próxima'), () => {
       if (retry) { ses.quiz.fb = null; board.flash = null; dirty(); dirtyBoard(); return; }
       board.flash = null; dirtyBoard();
-      if (last) { ses.done.aula = true; ses.screen = 'mont'; ses.card = 0; goView('placa'); toast(`Missão 1 concluída${ses.quiz.wrong ? ` com ${ses.quiz.wrong} erro(s)` : ' sem erros'}!`, 'ok'); }
+      if (last) { ses.done.aula = true; ses.screen = 'mont'; ses.card = 0; goView('placa'); toast(`Missão 1 concluída${ses.quiz.wrong ? ` com ${pl(ses.quiz.wrong, 'erro', 'erros')}` : ' sem erros'}!`, 'ok'); }
       else { ses.quiz.i++; ses.quiz.fb = null; board.setTab(QUIZ[ses.quiz.i].tab); }
       dirty();
     }, { kind: 'primary', size: 24 });
@@ -1022,7 +1024,7 @@ function drawCabos(ui, a) {
     return;
   }
   const loose = st.wires.reduce((s, w) => s + w.tight.filter(t => !t).length, 0);
-  ui.text(`${st.wires.length} de ${WIRES.length} fios ligados${loose ? ` · ${loose} ponta(s) sem aperto` : ''}`, a.x, y - 8, { size: 22, color: loose ? C.alerta : C.txt2, weight: 600 });
+  ui.text(`${st.wires.length} de ${WIRES.length} fios ligados${loose ? ` · ${pl(loose, 'ponta sem aperto', 'pontas sem aperto')}` : ''}`, a.x, y - 8, { size: 22, color: loose ? C.alerta : C.txt2, weight: 600 });
   const cols = 2, bw = (a.w - 16) / cols, bh = 62;
   WIRES.forEach((d, i) => {
     const bx = a.x + (i % cols) * (bw + 16), by = y + 8 + Math.floor(i / cols) * (bh + 8);
@@ -1032,7 +1034,7 @@ function drawCabos(ui, a) {
   });
   const can = WIRES.every(d => st.wires.some(w => w.wid === d.id));
   ui.button('cdone', a.x + a.w - 300, a.y + a.h - 44, 300, 56, 'Concluir ligações', () => {
-    if (loose) logErr('Cabos', `Concluiu as ligações com ${loose} ponta(s) sem aperto`, 0);
+    if (loose) logErr('Cabos', `Concluiu as ligações com ${pl(loose, 'ponta sem aperto', 'pontas sem aperto')}`, 0);
     ses.done.cabos = true; ses.screen = 'quadro'; ses.card = 0; goView('placa'); toast('Agora leve a placa até o quadro. Toque na borda laranja da placa com a Mão.', 'info', 5);
   }, { kind: 'primary', size: 24, disabled: !can });
 }
@@ -1107,9 +1109,16 @@ function drawRelatorio(ui, a) {
   const pts = ses.log.reduce((s, l) => s + l.pts, 0); const nota = Math.max(0, 100 - pts);
   let y = header(ui, a, ses.mode === 'desafio' ? 'Desafio concluído' : 'Missão 5 concluída', `Relatório do teste · nota ${nota}`);
   const mins = Math.round((Date.now() - ses.startT) / 60000);
-  ui.text(`${CHECKLIST.length} itens verificados · ${(ses.ncs || []).length} não conformidade(s) encontrada(s) · ${mins} min`, a.x, y - 6, { size: 22, color: C.txt2 });
+  ui.text(`${CHECKLIST.length} itens verificados · ${pl((ses.ncs || []).length, 'não conformidade encontrada', 'não conformidades encontradas')} · ${mins < 1 ? 'menos de 1 min' : pl(mins, 'minuto', 'minutos')}`, a.x, y - 6, { size: 22, color: C.txt2 });
   y += 30;
-  if (ses.mode === 'desafio') { const names = { swap: 'Fases trocadas (177/178)', qmx: 'Disjuntor-motor errado (GV2ME14)', kmx: 'Contator com bobina 220 Vca', crimp: 'Crimpagem incompleta (fio 179)', loose: 'Parafuso sem aperto (L3.2)', strap: 'Porta sem aterramento', nut: 'Porca da placa solta', link: 'Link GV2AF3 frouxo', gauge: 'Fio 177 com bitola 0,75 mm²', strip: 'Cobre exposto (fio 462)', rail: 'Trilho mal fixado', setting: 'Disjuntor-motor mal regulado', layout: 'RA26 e X24 trocados de posição', pe: 'Fio 179 no borne do terra (PE)', short: 'Decapagem curta (L2.2)' }; ui.text('Defeitos escondidos: ' + ses.defects.map(d => names[d]).join(' · '), a.x, y, { size: 20, color: C.alerta, weight: 600 }); y += 36; }
+  if (ses.mode === 'desafio') {
+    const names = { swap: 'Fases trocadas nos fios 177 e 178', qmx: 'Disjuntor-motor errado (GV2ME14)', kmx: 'Contator com bobina 220 Vca', crimp: 'Crimpagem incompleta no fio 179', loose: 'Parafuso sem aperto no fio L3.2', strap: 'Porta sem aterramento', nut: 'Porca da placa solta', link: 'Link GV2AF3 frouxo', gauge: 'Fio 177 com bitola 0,75 mm²', strip: 'Cobre exposto no fio 462', rail: 'Trilho mal fixado', setting: 'Disjuntor-motor mal regulado', layout: 'RA26 e X24 trocados de posição', pe: 'Fio 179 no borne do terra (PE)', short: 'Decapagem curta no fio L2.2' };
+    const where = { swap: ['9.1'], qmx: ['1.4', '6.7'], kmx: ['1.4', '8.7', '9.1'], crimp: ['1.13'], loose: ['1.13'], strap: ['2.3'], nut: ['1.14'], link: ['1.15'], gauge: ['1.9'], strip: ['10.2'], rail: ['1.6'], setting: ['6.7', '9.1'], layout: ['1.3'], pe: ['2.3', '9.1'], short: ['1.13'] };
+    const got = ses.defects.filter(d => where[d].some(id => (ses.foundIds || []).includes(id)));
+    ui.text(`Defeitos encontrados por você: ${got.length} de ${ses.defects.length}`, a.x, y + 4, { size: 26, weight: 700, color: got.length === ses.defects.length ? C.verde : C.alerta }); y += 14;
+    for (const d of ses.defects) { y += 36; const ok = got.includes(d); (ok ? ICONS.check : ICONS.cross)(ui.ctx, a.x + 14, y - 8, ok ? C.verde : C.erro, 24); ui.text(`${names[d]} · RE-33 item ${where[d].join(' / ')}`, a.x + 40, y, { size: 21 }); }
+    y += 30;
+  }
   ui.text(ses.log.length ? 'Pontos de atenção' : 'Nenhum erro registrado. Excelente trabalho!', a.x, y + 10, { size: 26, weight: 700 }); y += 30;
   for (const l of ses.log.slice(0, 9)) { ui.text(`${l.kind}`, a.x, y + 24, { size: 19, color: l.kind === 'Segurança' ? C.erro : C.alerta, weight: 700, mono: true }); ui.text(l.msg.length > 92 ? l.msg.slice(0, 90) + '…' : l.msg, a.x + 150, y + 24, { size: 20 }); y += 34; }
   if (ses.log.length > 9) ui.text(`+ ${ses.log.length - 9} outros`, a.x, y + 24, { size: 19, color: C.txt2 });
