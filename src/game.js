@@ -1,6 +1,6 @@
 // Lógica do jogo: estado, missões, interações, tablet, testes.
 import * as THREE from '../vendor/three.module.min.js';
-import { E, register, unregister, goView, toast, bringTablet, defineView } from './engine.js';
+import { E, register, unregister, goView, toast, bringTablet, defineView, setHandTag } from './engine.js';
 import { W, PLATE_SCALE, EASEL_POS } from './world.js';
 import { buildBornes, buildGV2, buildLC1D, buildRelay, buildLink, hitbox, box, cyl, mat, labelPlane, screwMesh, PLATE, labelTexture } from './models.js';
 import { PARTS, TRAY_ORDER, SLOTS, RAILS, WIRES, CABLES, CUT_OPTIONS, STRIP_OPTIONS, FERRULES, WIRE_COLORS, MOTOR,
@@ -27,7 +27,7 @@ function freshState() {
 }
 export let st = freshState();
 const ses = {
-  screen: 'menu', card: 0, quiz: { i: 0, fb: null, wrong: 0 }, tool: 'mao', hand: null, pending: null,
+  screen: 'intro', card: 0, quiz: { i: 0, fb: null, wrong: 0 }, tool: 'mao', hand: null, pending: null,
   log: [], flags: {}, meas: [], probe: null, reading: null, piece: null, lastPiece: null, item: 0, marks: {}, itemFb: null,
   startT: Date.now(), mode: 'normal', dial: false, done: {}, arcT: 0,
 };
@@ -118,7 +118,7 @@ function placePart(key, slot) {
   for (const t of b.terms) {
     const id = `${role}:${t.pin}`;
     const p = b.group.position.clone().add(t.pos);
-    const h = hitbox(0.0085, 0.009, 0.01, p.x, p.y, p.z); W.plateRoot.add(h);
+    const h = hitbox(0.0086, 0.013, 0.012, p.x, p.y, p.z); W.plateRoot.add(h);
     h.userData.term = { id, pos: p, face: t.face };
     registerTerm(h, id);
     termHits.set(id, h); rec.hits.push(h);
@@ -917,6 +917,7 @@ function drawTablet() {
   if (ses.hand?.type === 'plate') hand = 'Na mão: placa de montagem';
   if (ses.tool === 'multi') hand = `Multímetro ${({ ohm: 'Ω', vac: 'V~', vdc: 'V⎓' })[ses.meter || 'ohm']} · ` + (ses.reading ? `${ses.reading.txt}` : ses.probe ? 'toque no 2º ponto' : 'toque no 1º ponto');
   ui.text(hand, x + 14, 828, { size: 22, color: C.txt2, weight: 600 });
+  setHandTag(ses.hand || ses.tool === 'multi' ? hand.replace('Na mão: ', '') : (ses.tool === 'chave' ? 'Chave de fenda' : null));
   if (ses.hand) ui.button('drop', Wd - 150, 790, 126, 60, 'Soltar', () => dropHand(), { kind: 'ghost', size: 22 });
   ui.end();
 }
@@ -965,8 +966,9 @@ function drawQuiz(ui, a) {
     k.fillStyle = fb.ok ? C.verde : C.erro; k.fillRect(a.x, y + 6, 8, 120);
     ui.para(fb.t, a.x + 26, y + 46, a.w - 40, { size: 23 });
     const last = ses.quiz.i === QUIZ.length - 1;
-    ui.button('qnext', a.x + a.w - 260, a.y + a.h - 44, 260, 56, fb.ok ? (last ? 'Concluir missão' : 'Próxima') : 'Tentar de novo', () => {
-      if (!fb.ok) { ses.quiz.fb = null; board.flash = null; dirty(); dirtyBoard(); return; }
+    const retry = !fb.ok && q.type === 'pick';
+    ui.button('qnext', a.x + a.w - 260, a.y + a.h - 44, 260, 56, retry ? 'Tentar de novo' : (last ? 'Concluir missão' : 'Próxima'), () => {
+      if (retry) { ses.quiz.fb = null; board.flash = null; dirty(); dirtyBoard(); return; }
       board.flash = null; dirtyBoard();
       if (last) { ses.done.aula = true; ses.screen = 'mont'; ses.card = 0; goView('placa'); toast(`Missão 1 concluída${ses.quiz.wrong ? ` com ${ses.quiz.wrong} erro(s)` : ' sem erros'}!`, 'ok'); }
       else { ses.quiz.i++; ses.quiz.fb = null; board.setTab(QUIZ[ses.quiz.i].tab); }
@@ -1077,7 +1079,7 @@ function drawTeste(ui, a) {
   rows.forEach(([l, d], i) => progressRow(ui, a.x, y + 34 + i * 44, a.w, l, d));
   y += rows.length * 44 + 14;
   if (it.action === 'traction' && !fb) ui.button('tract', a.x, y + 6, 330, 54, 'Fazer teste de tração', () => doTraction(), { kind: 'secondary', size: 22 });
-  if (ses.reading && ses.tool === 'multi') ui.text(`Última leitura: ${ses.reading.txt}  (${termLabel(ses.reading.a)} × ${termLabel(ses.reading.b)})`, a.x + (it.action === 'traction' ? 350 : 0), y + 40, { size: 20, color: C.tint20, weight: 600 });
+  if (ses.reading && ses.tool === 'multi' && !fb) ui.text(`Última leitura: ${ses.reading.txt}  (${termLabel(ses.reading.a)} × ${termLabel(ses.reading.b)})`, a.x + (it.action === 'traction' ? 350 : 0), y + 40, { size: 20, color: C.tint20, weight: 600 });
   // feedback / marcações
   const by = a.y + a.h - 44;
   if (fb) {

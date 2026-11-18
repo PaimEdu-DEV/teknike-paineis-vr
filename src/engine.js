@@ -208,8 +208,9 @@ function releasePointer(ptr) {
 function tickHold(dt) {
   const h = E.holdState; if (!h) return null;
   // precisa continuar apontando para o mesmo objeto
-  if (h.ptr.hit?.object !== h.obj) { E.holdState = null; h.act.cancel && h.act.cancel(h.t / h.act.time); return null; }
-  h.t += dt; h.act.progress && h.act.progress(h.t / h.act.time);
+  // tolerância: o laser pode escapar do alvo por um instante (mão tremendo)
+  if (h.ptr.hit?.object !== h.obj) { h.off = (h.off || 0) + dt; if (h.off > 0.35) { E.holdState = null; h.act.cancel && h.act.cancel(h.t / h.act.time); return null; } return h.t / h.act.time; }
+  h.off = 0; h.t += dt; h.act.progress && h.act.progress(h.t / h.act.time);
   if (h.t >= h.act.time) { E.holdState = null; h.act.run(); pulse(h.ptr, 0.8, 60); return null; }
   if (Math.floor(h.t * 8) !== Math.floor((h.t - dt) * 8)) pulse(h.ptr, 0.15, 10);
   return h.t / h.act.time;
@@ -252,7 +253,7 @@ function tickPointers(dt) {
       else if (!label) { label = typeof ia.label === 'function' ? ia.label(c.hit) : ia.label; at = c.hit.point; }
     }
     for (const [ui, b] of hov) ui.setHover(b);
-    setVRTip(label, at);
+    setVRTip(label, at); placeHandTag();
     const p = tickHold(dt);
     E.vrRing.visible = p !== null;
     if (p !== null && E.holdState) { const hp = E.holdState.ptr.hit?.point; if (hp) { E.vrRing.position.copy(hp); E.vrRing.lookAt(E.camera.getWorldPosition(tmpV)); E.vrRing.geometry.dispose(); E.vrRing.geometry = new THREE.RingGeometry(0.012, 0.018, 24, 1, Math.PI / 2, -p * Math.PI * 2); } }
@@ -276,6 +277,10 @@ function setupXR() {
     space.addEventListener('selectend', () => releasePointer(c));
     E.rig.add(space); E.ctrls.push(c);
   }
+  const hc = document.createElement('canvas'); hc.width = 512; hc.height = 80;
+  const htex = new THREE.CanvasTexture(hc); htex.colorSpace = THREE.SRGBColorSpace;
+  E.handTag = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.019), new THREE.MeshBasicMaterial({ map: htex, transparent: true, depthTest: false }));
+  E.handTag.renderOrder = 996; E.handTag.visible = false; E.handTag.userData = { c: hc, tex: htex, last: null };
   E.vrRing = new THREE.Mesh(new THREE.RingGeometry(0.012, 0.018, 24), new THREE.MeshBasicMaterial({ color: C.verde, side: THREE.DoubleSide, depthTest: false }));
   E.vrRing.renderOrder = 999; E.vrRing.visible = false; E.scene.add(E.vrRing);
   // rótulo 3D
@@ -295,6 +300,19 @@ function setupXR() {
     E.rig.position.set(0, 0, 0); E.rig.rotation.set(0, 0, 0);
     goView(E.viewName || 'projeto', true); E.onVR && E.onVR(false);
   });
+}
+export function setHandTag(text) {
+  const t = E.handTag; if (!t) return; const d = t.userData;
+  if (d.last === text) return; d.last = text;
+  const k = d.c.getContext('2d'); k.clearRect(0, 0, 512, 80);
+  if (text) { k.font = '600 30px Archivo, Arial'; const w = Math.min(508, k.measureText(text).width + 30); k.fillStyle = 'rgba(86,185,81,0.95)'; k.fillRect(0, 10, w, 60); k.fillStyle = '#100F0D'; k.fillText(text, 15, 50, 480); }
+  d.tex.needsUpdate = true;
+}
+function placeHandTag() {
+  const t = E.handTag; const c = E.ctrls.find(c => c.connected && c.source?.handedness === 'right') || E.ctrls.find(c => c.connected);
+  if (!E.vr || !c || !t.userData.last) { t.visible = false; return; }
+  if (t.parent !== c.space) { c.space.add(t); t.position.set(0.045, 0.03, 0.02); t.rotation.set(-0.6, 0, 0); }
+  t.visible = true;
 }
 function setVRTip(label, at) {
   const t = E.vrTip; const d = t.userData;
