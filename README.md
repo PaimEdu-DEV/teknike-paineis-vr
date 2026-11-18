@@ -12,6 +12,8 @@ Roda no navegador do óculos (Meta Quest, Pico e outros com WebXR) e também no 
 4. **Placa no quadro**: abrir a porta, instalar a placa, apertar as porcas e ligar a cordoalha de aterramento da porta.
 5. **Testes RE-33**: 23 itens adaptados do RE-33 (inspeção, tração, aterramento, curto-circuito, energização, 24 Vcc, regulagem do disjuntor-motor, acionamento por saída do CLP e partida do motor), com multímetro (Ω, V~, V⎓) e marcação OK / NOK / NA.
 
+Com um fio na mão, o botão **Mostrar onde ligar** destaca os bornes de origem e destino na placa, para quem ainda está aprendendo a ler a lista de fios.
+
 **Desafio**: um painel já montado com 3 defeitos escondidos, sorteados entre 15 possíveis, para o aluno encontrar com o checklist.
 
 ## Erros que o aluno pode cometer (e como aparecem)
@@ -34,6 +36,10 @@ Roda no navegador do óculos (Meta Quest, Pico e outros com WebXR) e também no 
 | Disjuntor-motor mal regulado | 6.7, e desarma por sobrecarga na partida |
 | Cobre exposto ou sobra de cabo | 10.2 |
 
+## Testes automáticos (desenvolvimento)
+
+Abra com `?pc` para pular a tela inicial. O objeto `window.__game` expõe o estado e funções (`goMission`, `autoBuild`, `truth`, `startChallenge`...) e `E.loop()` avança um quadro, útil quando a aba está em segundo plano.
+
 ## Rodar localmente
 
 Qualquer servidor estático serve, por exemplo:
@@ -47,7 +53,7 @@ Abra `http://localhost:8765`. O WebXR exige HTTPS fora do `localhost`, e o GitHu
 ## Controles
 
 - **Óculos**: aponte o laser e use o gatilho para tocar. Segure o gatilho para apertar parafusos e crimpar. O analógico gira o corpo em passos de 30°, o botão A/X troca a ferramenta e o B/Y traz o painel-guia para a sua frente. Também funciona com rastreamento de mãos (pinça).
-- **Computador**: clique para tocar e segure para apertar. Botão direito (ou arrastar em área vazia) olha em volta, W A S D andam, Q e E sobem e descem. As teclas 1, 2 e 3 trocam a ferramenta.
+- **Computador**: clique para tocar e segure para apertar. Botão direito (ou arrastar em área vazia) olha em volta, W A S D andam, Q e E sobem e descem. As teclas 1, 2 e 3 trocam a ferramenta e a tecla H esconde ou mostra o painel-guia.
 
 ## Virar app (APK) no futuro
 
